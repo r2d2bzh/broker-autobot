@@ -1,0 +1,156 @@
+:source-highlighter: highlightjs
+
+:wikipedia-autobot: https://en.wikipedia.org/wiki/Autobot
+:lodash-merge: https://lodash.com/docs/#merge
+:moleculer: https://moleculer.services/
+:moleculer-doc: {moleculer}/docs/0.14
+:moleculer-action: {moleculer-doc}/actions.html
+:moleculer-broker: {moleculer-doc}/broker.html
+:moleculer-event: {moleculer-doc}/events.html
+:moleculer-service: {moleculer-doc}/services.html
+
+# The broker autobot
+
+The {wikipedia-autobot}[Autobots] are benevolent, sentient, **self-configuring** robotic lifeforms from the planet Cybertron.
+This particular autobot is designed to ease the configuration updates of {moleculer}[Moleculer] services {moleculer-broker}[brokers].
+
+## Typical use case
+
+You manage multiple {moleculer-service}[Moleculer services] and you want to easily update the configuration of the brokers hosting the service instances at once.
+For instance, you have common settings for timeouts or log levels for all these brokers.
+
+On start, `broker-autobot` will:
+
+. get these common settings through a configurable {moleculer-action}[Moleculer action] (a temporary broker is used)
+. parse these settings through a customizable parser (`broker-autobot` setting)
+. create a new broker with these settings and create your services with this broker instance
+. start the broker
+
+Additionally `broker-autobot` can subscribe to a customizable event (`broker-autobot` setting) through its own service in order to be aware of a configuration change.
+While receiving this event it will:
+
+. decide whether this event applies to its configuration through a customizable predicate (`broker-autobot` setting)
+. retrieve the new common settings and parse them
+. **TODO**: decide for a restart order between the broker instances impacted by the modification and wait for one's turn
+. stop the current broker instance
+. create a new broker with these settings and create your services with this broker instance
+. start the broker
+. **TODO**: tell other brokers that we are finished with the update
+
+[WARNING]
+====
+Some broker configuration settings **must not** be retrieved/updated by the `broker-autobot`, this is by design.
+Namely:
+
+* `namespace`
+* `transporter`
+* `serializer`
+
+Basically all settings related to the communication between brokers cannot be changed dynamically.
+This due to the fact that these settings are needed by the temporary broker used to retrieve the common settings.
+====
+
+## Usage
+
+Get the `broker-autobot` module:
+
+[source,bash]
+----
+npm install @r2d2bzh/broker-autobot
+----
+
+In your main module:
+
+.Base usage
+====
+.index.js
+[source,javascript]
+----
+const brokerAutobot = require('@r2d2bzh/broker-autobot');
+
+const schema1Factory = () => {
+  // return your service schema 1 here
+};
+const schema2Factory = () => {
+  // return your service schema 2 here
+};
+
+const autobot = brokerAutobot({
+  init: {
+    // initial broker settings, typically settings related to the communication between brokers
+    transporter: process.env.TRANSPORTER
+  },
+  schemaFactories: [schema1Factory, schema2Factory],
+});
+
+autobot.start();
+----
+NOTE: Here there is neither an action nor an event to manage the broker configuration, the broker will start with an empty configuration.
+====
+
+## Retrieving the common broker configuration
+
+To register an action to retrieve the common broker configuration:
+
+.Retrieving the common broker settings
+====
+.index.js
+[source,javascript]
+----
+const autobot = brokerAutobot({
+  retrieveAction: {
+    name: 'configuration-holder-service.get-broker-config',
+    params: {
+      // action parameters
+    },
+    parser: (retrieveActionResult) => {
+      // parse retrieveActionResult and return the broker configuration object
+    },
+  },
+});
+----
+NOTE: If no parser is provided, the `retrieveActionResult` is directly used as the broker configuration object.
+====
+
+## Overloading the common configuration
+
+If some specific settings need to be applied to this particular broker instance, the common configuration can be overloaded:
+
+.Broker settings overload
+====
+.index.js
+[source,javascript]
+----
+const autobot = brokerAutobot({
+  retrieveAction: {
+    // ...
+  },
+  overload: {
+    logLevel: { '**': 'warn' },
+  },
+});
+----
+NOTE: {lodash-merge}[Lodash merge] is used to merge `overload` over the common broker settings.
+====
+
+## Configuration update event
+
+In order for the `broker-autobot` to be aware of a configuration update, you can subscribe it to a {moleculer-event}[Moleculer event]:
+
+
+.Handling configuration updates
+====
+.index.js
+[source,javascript]
+----
+const autobot = brokerAutobot({
+  updateEvent: {
+    name: 'configuration-holder-service.configurationUpdated',
+    predicate: (ctx) => {
+      // returns true or false depending on the event handler context
+    },
+  },
+});
+----
+NOTE: If no predicate is provided, the configuration will always be updated when the event is received.
+====
