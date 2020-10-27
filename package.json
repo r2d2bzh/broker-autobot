@@ -1,0 +1,37 @@
+{
+  "name": "broker-autobot",
+  "version": "0.0.0",
+  "description": "self-configuring robotic lifeform to manage centrally the configuration of all Moleculer brokers",
+  "main": "broker-autobot",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "ava"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r2d2bzh/broker-autobot.git"
+  },
+  "keywords": [
+    "moleculer",
+    "broker",
+    "central",
+    "configuration"
+  ],
+  "author": "r2d2bzh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/r2d2bzh/broker-autobot/issues"
+  },
+  "homepage": "https://github.com/r2d2bzh/broker-autobot#readme",
+  "dependencies": {
+    "get-stream": "^6.0.0",
+    "lodash.merge": "^4.6.2",
+    "moleculer": "^0.14.11"
+  },
+  "devDependencies": {
+    "ava": "^3.13.0",
+    "nyc": "^15.1.0"
+  }
+}
