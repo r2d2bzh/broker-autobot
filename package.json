@@ -7,7 +7,16 @@
     "test": "test"
   },
   "scripts": {
-    "test": "ava"
+    "test:debug": "ava debug --host 0.0.0.0 --port 8228",
+    "test": "nyc ava"
+  },
+  "nyc": {
+    "cwd": ".",
+    "include": [
+      "src"
+    ],
+    "reporter": "lcov",
+    "report-dir": "coverage"
   },
   "repository": {
     "type": "git",
@@ -28,10 +37,12 @@
   "dependencies": {
     "get-stream": "^6.0.0",
     "lodash.merge": "^4.6.2",
-    "moleculer": "^0.14.11"
+    "moleculer": "^0.14.11",
+    "nodemon": "^2.0.6"
   },
   "devDependencies": {
     "ava": "^3.13.0",
+    "moleculer-cron": "0.0.2",
     "nyc": "^15.1.0"
   }
 }

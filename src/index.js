@@ -5,16 +5,21 @@ const merge = require('lodash.merge');
 
 const identity = (x) => x;
 
-const retrieveSettings = async (callable, { name, params = {}, isStreamed = false, parser = identity }) => {
+/**
+ * @param callable broker or moleculer context
+ */
+const retrieveSettings = async (callable, { name, params = {}, isStreamed = false, parser = identity }, logger) => {
   if (name) {
     const config = await (isStreamed ? getStream : identity)(await callable.call(name, params));
+    logger.info('Settings retrieved:', config);
     return parser(config);
   } else {
+    logger.info('No retrieve settings action defined');
     return {};
   }
 }
 
-const updateService = ({name, predicate}, emitter) => ({
+const updateService = ({name, predicate = () => true}, emitter) => ({
   name: `broker-autobot-${broker.nodeID}`,
   events: {
     [name]: (ctx) => {
@@ -28,15 +33,22 @@ const updateService = ({name, predicate}, emitter) => ({
 
 const createBroker = (...args) => new ServiceBroker(merge({}, ...args));
 
-const starter = (context) => async () => {
+const starter = (context, logger) => async () => {
   if (!context.started) {
+    logger.info('Starting autobot');
     context.broker = createBroker(context.initialSettings, context.settings, context.overload);
     if (context.updateEvent.name) {
       context.broker.createService(updateService(context.updateEvent, context.settingsModification));
     }
-    context.schemaFactories.forEach(factory => context.broker.createService(factory()));
+    context.schemaFactories.forEach(factory => {
+      const schema = factory();
+      logger.info(`Creating service ${schema.name}`);
+      context.broker.createService(schema);
+    });
     await context.broker.start();
     context.started = true;
+  } else {
+    logger.info('Autobot already started');
   }
 };
 
@@ -47,31 +59,35 @@ module.exports = async ({
   schemaFactories = [],
   updateEvent = {},
 } = {}) => {
+  const initialSettings = merge({
+    ...(process.env.TRANSPORTER ? { transporter: process.env.TRANSPORTER } : {}),
+    ...(process.env.NAMESPACE ? { namespace: process.env.NAMESPACE } : {}),
+  }, init);
   const context = {
     overload,
     schemaFactories,
     updateEvent,
     broker: createBroker(initialSettings, overload),
-    initialSettings: merge({
-      ...(process.env.TRANSPORTER ? { transporter: process.env.TRANSPORTER } : {}),
-      ...(process.env.NAMESPACE ? { namespace: process.env.NAMESPACE } : {}),
-    }, init),
+    initialSettings,
     settings: {},
     settingsModification: new EventEmitter(),
     started: false,
   };
-  const start = starter(context);
+  const logger = context.broker.getLogger('autobot');
+  const start = starter(context, logger);
 
   await context.broker.start();
-  settings = await retrieveSettings(context.broker, retrieveAction);
+  context.settings = await retrieveSettings(context.broker, retrieveAction, logger);
   await context.broker.stop();
 
   context.settingsModification.on('update', async (ctx) => {
-    context.settings = await retrieveSettings(ctx, retrieveAction);
+    context.settings = await retrieveSettings(ctx, retrieveAction, logger);
     // TODO: deal with restart priorities between multiple brokers
     await context.broker.stop();
     await start();
   });
-  
-  return start;
+  return {
+    context,
+    start
+  };
 };
