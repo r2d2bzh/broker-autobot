@@ -8,9 +8,9 @@ const identity = (x) => x;
 /**
  * @param callable broker or moleculer context
  */
-const retrieveSettings = async (callable, { name, params = {}, isStreamed = false, parser = identity }, logger) => {
-  if (name) {
-    const config = await (isStreamed ? getStream : identity)(await callable.call(name, params));
+const retrieveSettings = async (callable, { serviceName, actionName, params = {}, isStreamed = false, parser = identity }, logger) => {
+  if (serviceName && actionName) {
+    const config = await (isStreamed ? getStream : identity)(await callable.call(`${serviceName}.${actionName}`, params));
     logger.info('Settings retrieved:', config);
     return parser(config);
   } else {
@@ -77,6 +77,9 @@ module.exports = async ({
   const start = starter(context, logger);
 
   await context.broker.start();
+  if(retrieveAction.serviceName) {
+    await context.broker.waitForServices([retrieveAction.serviceName]);
+  }
   context.settings = await retrieveSettings(context.broker, retrieveAction, logger);
   await context.broker.stop();
 
@@ -86,8 +89,14 @@ module.exports = async ({
     await context.broker.stop();
     await start();
   });
+
+  // const exposedBrokerMethods = ['call', 'stop', 'waitForServices'];
+  // ...Object.fromEntries(exposedBrokerMethods.map(name => [name, context.broker[name].bind(context.broker)])),
+
   return {
-    context,
-    start
+    start,
+    stop: () => context.broker.stop(),
+    call: (...args) => context.broker.call(...args),
+    waitForServices: (...args) => context.broker.waitForServices(...args),
   };
 };

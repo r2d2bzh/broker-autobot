@@ -6,54 +6,50 @@ const { v4: uuid } = require('uuid');
 const describeConfig = () => ({
   name: 'describe-config',
   actions: {
-    get: {
-      handler: (context) => {
-        return context.broker.options;
-      },
-    },
+    get: (context) => context.broker.options,
   },
 });
 
-const startRetrieveActionBroker = async ()=> {
-  const retrieveAction = () => ({
-    name: 'retrieve-action',
+const retrieveConfig = async ()=> {
+  const serviceBroker = new ServiceBroker({
+    transporter: 'TCP',
+    nodeID: uuid() + '-config-holder'
+  });
+  serviceBroker.createService({
+    name: 'config-holder',
     actions: {
       get: {
-        handler: (context) => {
-          return {
-            dynamicConfig: true
-          }
-        },
+        handler: () => ({
+          dynamicConfig: true
+        }),
       },
     },
   });
-  const serviceBroker = new ServiceBroker({
-    transporter: 'NATS',
-    nodeID: uuid() + '-test-service'
-  });
-  serviceBroker.createService(retrieveAction());
   await serviceBroker.start();
-  await serviceBroker.waitForServices(['retrieve-action']);
 }
 
 test.before(async (t) => {
-  await startRetrieveActionBroker();
-  const autobot = await brokerAutobot({
+  await retrieveConfig();
+  t.context.autobot = await brokerAutobot({
     init: {
       foo: 'bar',
-      transporter: 'NATS',
+      transporter: 'TCP',
       nodeID: uuid() + '-autobot'
     },
     retrieveAction: {
-      name: 'retrieve-action.get'
+      serviceName: 'config-holder',
+      actionName: 'get'
     },
     schemaFactories: [describeConfig],
   });
-  await autobot.start();
-  t.context.autobotContext = autobot.context;
+  await t.context.autobot.start();
+});
+
+test.after.always(async (t) => {
+  await t.context.autobot.stop();
 });
 
 test('fetch config from retrieve action', async t => {
-  const { nodeID, ...config } = await t.context.autobotContext.broker.call('describe-config.get');
+  const { nodeID, ...config } = await t.context.autobot.call('describe-config.get');
   t.snapshot(config);
 });
