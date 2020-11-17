@@ -18,12 +18,12 @@ endif::[]
 :moleculer-event: {moleculer-doc}/events.html
 :moleculer-service: {moleculer-doc}/services.html
 
-# The broker autobot
+= The broker autobot
 
 The {wikipedia-autobot}[Autobots] are benevolent, sentient, **self-configuring** robotic lifeforms from the planet Cybertron.
 This particular autobot is designed to ease the configuration updates of {moleculer}[Moleculer] services {moleculer-broker}[brokers].
 
-## Typical use case
+== Typical use case
 
 You manage multiple {moleculer-service}[Moleculer services] and you want to easily update the configuration of the brokers hosting the service instances at once.
 For instance, you have common settings for timeouts or log levels for all these brokers.
@@ -59,7 +59,7 @@ Basically all settings related to the communication between brokers cannot be ch
 This due to the fact that these settings are needed by the temporary broker used to retrieve the common settings.
 ====
 
-## Usage
+== Usage
 
 Get the `broker-autobot` module:
 
@@ -97,7 +97,7 @@ autobot.start();
 NOTE: Here there is neither an action nor an event to manage the broker configuration, the broker will start with an empty configuration.
 ====
 
-## Retrieving the common broker configuration
+== Retrieving the common broker configuration
 
 To register an action to retrieve the common broker configuration:
 
@@ -121,7 +121,7 @@ const autobot = brokerAutobot({
 NOTE: If no parser is provided, the `retrieveActionResult` is directly used as the broker configuration object.
 ====
 
-## Overloading the common configuration
+== Overloading the common configuration
 
 If some specific settings need to be applied to this particular broker instance, the common configuration can be overloaded:
 
@@ -142,7 +142,7 @@ const autobot = brokerAutobot({
 NOTE: {lodash-merge}[Lodash merge] is used to merge `overload` over the common broker settings.
 ====
 
-## Configuration update event
+== Configuration update event
 
 In order for the `broker-autobot` to be aware of a configuration update, you can subscribe it to a {moleculer-event}[Moleculer event]:
 
@@ -163,3 +163,11 @@ const autobot = brokerAutobot({
 ----
 NOTE: If no predicate is provided, the configuration will always be updated when the event is received.
 ====
+
+== Contributing
+
+=== Unit tests
+
+In order to start unit tests you need to start nats server: `docker run -p 4222:4222 nats`.
+
+Then start them with with `npm test`.

@@ -1,5 +1,6 @@
 const brokerAutobot = require('../src');
 const test = require('ava');
+const { v4: uuid } = require('uuid');
 
 test.before(async (t) => {
   const describeConfig = () => ({
@@ -14,7 +15,8 @@ test.before(async (t) => {
   });
   const autobot = await brokerAutobot({
     init: {
-      foo: 'bar'
+      foo: 'bar',
+      nodeID: uuid() + '-autobot'
     },
     schemaFactories: [describeConfig],
   });
@@ -23,6 +25,6 @@ test.before(async (t) => {
 });
 
 test('fetch a simple config service', async t => {
-  const describe = await t.context.brokerContext.broker.call('describe-config.get');
-  t.is(describe.foo, 'bar');
+  const {nodeID, ...config} = await t.context.brokerContext.broker.call('describe-config.get');
+  t.snapshot(config);
 });
