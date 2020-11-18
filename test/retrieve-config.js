@@ -2,13 +2,7 @@ const brokerAutobot = require('../src');
 const test = require('ava');
 const { ServiceBroker } = require('moleculer');
 const { v4: uuid } = require('uuid');
-
-const describeConfig = () => ({
-  name: 'describe-config',
-  actions: {
-    get: (context) => context.broker.options,
-  },
-});
+const { describeConfigFactory } = require('./helpers/utils');
 
 const retrieveConfig = async ()=> {
   const serviceBroker = new ServiceBroker({
@@ -18,11 +12,7 @@ const retrieveConfig = async ()=> {
   serviceBroker.createService({
     name: 'config-holder',
     actions: {
-      get: {
-        handler: () => ({
-          dynamicConfig: true
-        }),
-      },
+      get: () => ({ dynamicConfig: true }),
     },
   });
   await serviceBroker.start();
@@ -34,13 +24,13 @@ test.before(async (t) => {
     init: {
       foo: 'bar',
       transporter: 'TCP',
-      nodeID: uuid() + '-autobot'
+      nodeID: uuid() + '-autobot',
     },
     retrieveAction: {
       serviceName: 'config-holder',
-      actionName: 'get'
+      actionName: 'get',
     },
-    schemaFactories: [describeConfig],
+    schemaFactories: [describeConfigFactory],
   });
   await t.context.autobot.start();
 });
@@ -49,7 +39,7 @@ test.after.always(async (t) => {
   await t.context.autobot.stop();
 });
 
-test('fetch config from retrieve action', async t => {
+test('Autobot should start with a dynamic config', async t => {
   const { nodeID, ...config } = await t.context.autobot.call('describe-config.get');
   t.snapshot(config);
 });
