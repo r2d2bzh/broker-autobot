@@ -108,7 +108,8 @@ To register an action to retrieve the common broker configuration:
 ----
 const autobot = brokerAutobot({
   retrieveAction: {
-    name: 'configuration-holder-service.get-broker-config',
+    serviceName: 'configuration-holder-service',
+    actionName: 'get-broker-config',
     params: {
       // action parameters
     },
@@ -163,11 +164,3 @@ const autobot = brokerAutobot({
 ----
 NOTE: If no predicate is provided, the configuration will always be updated when the event is received.
 ====
-
-== Contributing
-
-=== Unit tests
-
-In order to start unit tests you need to start nats server: `docker run -p 4222:4222 nats`.
-
-Then start them with with `npm test`.
