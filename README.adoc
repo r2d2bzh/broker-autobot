@@ -85,7 +85,7 @@ const schema2Factory = () => {
 };
 
 const autobot = brokerAutobot({
-  init: {
+  initialSettings: {
     // initial broker settings, typically settings related to the communication between brokers
     transporter: process.env.TRANSPORTER
   },
@@ -107,7 +107,7 @@ To register an action to retrieve the common broker configuration:
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  retrieveAction: {
+  settingsRetrieveAction: {
     serviceName: 'configuration-holder-service',
     actionName: 'get-broker-config',
     params: {
@@ -126,21 +126,21 @@ NOTE: If no parser is provided, the `retrieveActionResult` is directly used as t
 
 If some specific settings need to be applied to this particular broker instance, the common configuration can be overloaded:
 
-.Broker settings overload
+.Broker settings settingsOverload
 ====
 .index.js
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  retrieveAction: {
+  settingsRetrieveAction: {
     // ...
   },
-  overload: {
+  settingsOverload: {
     logLevel: { '**': 'warn' },
   },
 });
 ----
-NOTE: {lodash-merge}[Lodash merge] is used to merge `overload` over the common broker settings.
+NOTE: {lodash-merge}[Lodash merge] is used to merge `settingsOverload` over the common broker settings.
 ====
 
 == Configuration update event

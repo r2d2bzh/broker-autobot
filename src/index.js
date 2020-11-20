@@ -1,102 +1,98 @@
-const EventEmitter = require('events');
-const { ServiceBroker } = require('moleculer');
 const getStream = require('get-stream');
 const merge = require('lodash.merge');
+const newBrokerRevolver = require('./broker-revolver');
 
 const identity = (x) => x;
 
-/**
- * @param callable broker or moleculer context
- */
-const retrieveSettings = async (callable, { serviceName, actionName, params = {}, isStreamed = false, parser = identity }, logger) => {
+const retrieveSettings = async (
+  brokerRevolver,
+  {
+    serviceName,
+    actionName,
+    params = {},
+    isStreamed = false,
+    parser = identity,
+  },
+) => {
   if (serviceName && actionName) {
-    const config = await (isStreamed ? getStream : identity)(await callable.call(`${serviceName}.${actionName}`, params));
-    logger.info('Settings retrieved:', config);
+    const config = await (isStreamed ? getStream : identity)(
+      await brokerRevolver.call(`${serviceName}.${actionName}`, params),
+    );
+    brokerRevolver.log().info('Settings retrieved:', config);
     return parser(config);
-  } else {
-    logger.info('No retrieve settings action defined');
-    return {};
   }
-}
+  brokerRevolver.log().info('No retrieve settings action defined');
+  return {};
+};
 
-const updateService = ({name, predicate = () => true}, emitter) => ({
-  name: `broker-autobot-${broker.nodeID}`,
-  events: {
-    [name]: (ctx) => {
-      if(predicate(ctx)) {
-        // TODO debounce (limit to 1 event in 30s)
-        emitter.emit('update', ctx);
-      }
-    }
-  }
-});
-
-const createBroker = (...args) => new ServiceBroker(merge({}, ...args));
-
-const starter = (context, logger) => async () => {
-  if (!context.started) {
-    logger.info('Starting autobot');
-    context.broker = createBroker(context.initialSettings, context.settings, context.overload);
-    if (context.updateEvent.name) {
-      context.broker.createService(updateService(context.updateEvent, context.settingsModification));
-    }
-    context.schemaFactories.forEach(factory => {
-      const schema = factory();
-      logger.info(`Creating service ${schema.name}`);
-      context.broker.createService(schema);
-    });
-    await context.broker.start();
-    context.started = true;
-  } else {
-    logger.info('Autobot already started');
-  }
+// TODO: deal with restart priorities between multiple brokers
+const onConfigUpdate = (stop, start, log) => async (ctx) => {
+  log().info(`Update event ${ctx.eventName} received`);
+  await stop();
+  await start(ctx.params);
+  log().info('Settings are updated:', ctx.params);
 };
 
 module.exports = async ({
-  init = {},
-  overload = {},
-  retrieveAction = {},
+  initialSettings = {},
+  settingsOverload = {},
+  settingsRetrieveAction = {},
+  settingsUpdateEvent = {},
   schemaFactories = [],
-  updateEvent = {},
 } = {}) => {
-  const initialSettings = merge({
-    ...(process.env.TRANSPORTER ? { transporter: process.env.TRANSPORTER } : {}),
-    ...(process.env.NAMESPACE ? { namespace: process.env.NAMESPACE } : {}),
-  }, init);
-  const context = {
-    overload,
-    schemaFactories,
-    updateEvent,
-    broker: createBroker(initialSettings, overload),
-    initialSettings,
-    settings: {},
-    settingsModification: new EventEmitter(),
-    started: false,
+  const settings = {
+    initial: merge(
+      {
+        ...(process.env.TRANSPORTER
+          ? { transporter: process.env.TRANSPORTER }
+          : {}),
+        ...(process.env.NAMESPACE ? { namespace: process.env.NAMESPACE } : {}),
+      },
+      initialSettings,
+    ),
+    current: {},
+    overload: settingsOverload,
   };
-  const logger = context.broker.getLogger('autobot');
-  const start = starter(context, logger);
 
-  await context.broker.start();
-  if(retrieveAction.serviceName) {
-    await context.broker.waitForServices([retrieveAction.serviceName]);
-  }
-  context.settings = await retrieveSettings(context.broker, retrieveAction, logger);
-  await context.broker.stop();
-
-  context.settingsModification.on('update', async (ctx) => {
-    context.settings = await retrieveSettings(ctx, retrieveAction, logger);
-    // TODO: deal with restart priorities between multiple brokers
-    await context.broker.stop();
-    await start();
+  const brokerRevolver = newBrokerRevolver({
+    settings,
+    settingsUpdateEvent,
+    schemaFactories,
   });
 
+  const start = async (currentSettings) => {
+    if (!currentSettings && settingsRetrieveAction.serviceName) {
+      await brokerRevolver.start(settings);
+      await brokerRevolver.waitForServices([
+        settingsRetrieveAction.serviceName,
+      ]);
+      settings.current = await retrieveSettings(
+        brokerRevolver,
+        settingsRetrieveAction,
+      );
+      await brokerRevolver.stop();
+    } else {
+      settings.current = currentSettings;
+    }
+    await brokerRevolver.start(settings);
+  };
+
+  const stop = () => brokerRevolver.stop();
+
+  brokerRevolver.on(
+    'config-update',
+    onConfigUpdate(stop, start, brokerRevolver.log),
+  );
+
   // const exposedBrokerMethods = ['call', 'stop', 'waitForServices'];
-  // ...Object.fromEntries(exposedBrokerMethods.map(name => [name, context.broker[name].bind(context.broker)])),
+  // ...Object.fromEntries(exposedBrokerMethods
+  // .map(name => [name, context.broker[name].bind(context.broker)])),
 
   return {
     start,
-    stop: () => context.broker.stop(),
-    call: (...args) => context.broker.call(...args),
-    waitForServices: (...args) => context.broker.waitForServices(...args),
+    stop,
+    call: (...args) => brokerRevolver.call(...args),
+    waitForServices: (...args) => brokerRevolver.waitForServices(...args),
+    on: (...args) => brokerRevolver.on(...args),
   };
 };
