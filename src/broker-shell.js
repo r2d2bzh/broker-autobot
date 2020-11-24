@@ -13,10 +13,9 @@ const createBroker = ({ initial, current, overload }) =>
 /**
  * Manage the broker state
  * @param {settings} settings
- * @param {*} emit
  * @returns {brokerShell}
  */
-const newBrokerShell = (settings, emit) => {
+const newBrokerShell = (settings) => {
   const inside = {
     state: STOPPED,
     broker: createBroker(settings),
@@ -29,7 +28,6 @@ const newBrokerShell = (settings, emit) => {
     setState: (newState) => {
       inside.state = newState;
       log().info(`Autobot is ${inside.state}`);
-      emit('state', inside.state);
     },
     getState: () => inside.state,
     call: (...args) => inside.broker.call(...args),
@@ -42,7 +40,6 @@ const newBrokerShell = (settings, emit) => {
       }
       inside.broker = createBroker(newSettings);
     },
-    emit,
     log,
   };
 };

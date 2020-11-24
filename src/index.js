@@ -104,5 +104,6 @@ module.exports = async ({
     call: (...args) => brokerRevolver.call(...args),
     waitForServices: (...args) => brokerRevolver.waitForServices(...args),
     on: (...args) => brokerRevolver.on(...args),
+    nodeID: () => brokerRevolver.nodeID(),
   };
 };

@@ -14,7 +14,6 @@
   @typedef {{
     nodeID: () => string
     log: () => import('moleculer').LoggerInstance
-    emit: {(name: string, context: any)=> void}
     start: () => Promise<void>
     stop: () => Promise<void>
     setState: (state: state) => void
@@ -32,6 +31,7 @@
 
 /**
   @typedef { import('events').EventEmitter & {
+    nodeID: () => string
     start: (settings?:settings) => Promise<void>
     stop: () => Promise<void>
     log: () => import('moleculer').LoggerInstance

@@ -1,16 +1,17 @@
 // @ts-check
 const test = require('ava');
+const sleep = require('util').promisify(setTimeout);
 const { ServiceBroker } = require('moleculer');
 const { v4: uuid } = require('uuid');
 const brokerAutobot = require('../src');
 const { describeConfigFactory } = require('./helpers/utils');
 
 const retrieveConfig = async (t) => {
-  t.context.configHolderService = new ServiceBroker({
+  t.context.configHolderServiceBroker = new ServiceBroker({
     transporter: 'TCP',
     nodeID: `${uuid()}-dynamic-config-holder`,
   });
-  t.context.configHolderService.createService({
+  t.context.configHolderServiceBroker.createService({
     name: 'dynamic-config-holder',
     actions: {
       get: (context) => ({ count: context.meta.count || 0 }),
@@ -19,11 +20,13 @@ const retrieveConfig = async (t) => {
           count: 'number',
         },
         handler: async (context) => {
+          console.log('sending event configuration update');
           context.meta.count = context.params.count;
           context.broker.broadcast(
             'dynamic-config-holder.configurationUpdated',
             { count: context.meta.count },
           );
+          console.log('event configuration update sent');
           return {
             acknowledge: true,
           };
@@ -31,7 +34,7 @@ const retrieveConfig = async (t) => {
       },
     },
   });
-  await t.context.configHolderService.start();
+  await t.context.configHolderServiceBroker.start();
 };
 
 test.before(async (t) => {
@@ -67,15 +70,20 @@ test('Autobot should update on signal received', async (t) => {
 
   const p = new Promise((res) => t.context.autobot.on('config-update', res));
 
-  const { acknowledge } = await t.context.configHolderService.call(
+  await t.context.configHolderServiceBroker.waitForServices(
+    `autobot-updater-${t.context.autobot.nodeID()}`,
+  );
+  const { acknowledge } = await t.context.configHolderServiceBroker.call(
     'dynamic-config-holder.update',
     {
       count: 1,
     },
   );
   t.is(acknowledge, true);
-
+  // wait before config update is done
   await p;
+  // then wait untill autobot has reloaded his config
+  await sleep(1000);
   const result = await t.context.autobot.call('describe-config.get');
   t.is(result.count, 1);
 });
