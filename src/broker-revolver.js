@@ -1,13 +1,15 @@
-const EventEmitter = require('events');
-const merge = require('lodash.merge');
-const { ServiceBroker } = require('moleculer');
+/// <reference path="types.js" />
+// @ts-check
+const { EventEmitter } = require('events');
+const newBrokerShell = require('./broker-shell');
+const {
+  STARTING, STOPPING, STOPPED, STARTED,
+} = require('./constants');
 
 /**
- * @param {settings} param0
+ * @param {settingsUpdateEvent} settingsUpdateEvent
+ * @param {brokerShell} brokerShell
  */
-const createBroker = ({ initial, current, overload }) =>
-  new ServiceBroker(merge({}, initial, current, overload));
-
 const newUpdateServiceSchema = (
   { name, predicate = () => true },
   brokerShell,
@@ -28,16 +30,20 @@ const newUpdateServiceSchema = (
 });
 
 /**
- * @param {{brokerShell:brokerShell, schemaFactories, settingsUpdateEvent}} param0
+  @param {{
+    brokerShell:brokerShell,
+    schemaFactories: schemaFactory[],
+    settingsUpdateEvent: settingsUpdateEvent
+  }} staterOptions
  */
 const starter = ({
   brokerShell,
   schemaFactories,
   settingsUpdateEvent,
-}) => async (settings) => {
-  if (brokerShell.getState() === 'stopped') {
+}) => /** @param {settings} settings */ async (settings) => {
+  if (brokerShell.getState() === STOPPED) {
     brokerShell.newSettings(settings);
-    brokerShell.setState('starting');
+    brokerShell.setState(STARTING);
     if (settingsUpdateEvent.name) {
       brokerShell
         .log()
@@ -53,7 +59,7 @@ const starter = ({
       return schema.name;
     });
     await brokerShell.start();
-    brokerShell.setState('started');
+    brokerShell.setState(STARTED);
   } else {
     brokerShell
       .log()
@@ -65,90 +71,40 @@ const starter = ({
  * @param {brokerShell} brokerShell
  */
 const stopper = (brokerShell) => async () => {
-  if (brokerShell.getState() === 'started') {
-    brokerShell.setState('stopping');
+  if (brokerShell.getState() === STARTED) {
+    brokerShell.setState(STOPPING);
     await brokerShell.stop();
-    brokerShell.setState('stopped');
+    brokerShell.setState(STOPPED);
   } else {
     brokerShell.log().warn(`Cannot stop, autobot is ${brokerShell.getState()}`);
   }
 };
 
 /**
- * Manage the broker state
- * @typedef {'starting' | 'started' | 'stopping' | 'stopped'} state
- * @typedef {Object} brokerShell
- * @property {()=> string} nodeID
- * @property {(params: any) => void} log
- * @property {()=> string} emit
- * @property {()=> Promise<void>} start
- * @property {()=> Promise<void>} stop
- * @property {(state:state)=> void} setState
- * @property {()=> state} getState
- * @property {(newSettings)=> void} newSettings
- * @property {(schema) => void} createService
- * @property {(schema) => Promise<any>} call
- * @property {(services: Array<string>) => Promise<void>} waitForServices
- * @typedef {{initial, current, overload}} settings
- * @param {settings} settings
- * @param {*} emit
- */
-const newBrokerShell = (settings, emit) => {
-  const inside = {
-    /** @type {state} */
-    state: 'stopped',
-    broker: createBroker(settings),
-  };
-  const log = () => inside.broker.getLogger('autobot');
-  return {
-    nodeID: () => inside.broker.nodeID,
-    start: () => inside.broker.start(),
-    stop: () => inside.broker.stop(),
-    setState: (newState) => {
-      inside.state = newState;
-      log().info(`Autobot is ${inside.state}`);
-      emit('state', inside.state);
-    },
-    getState: () => inside.state,
-    call: (...args) => inside.broker.call(...args),
-    waitForServices: (...args) => inside.broker.waitForServices(...args),
-    createService: (schema) => inside.broker.createService(schema),
-    newSettings: (newSettings) => {
-      if (inside.state !== 'stopped') {
-        // This can only occur in case of an autobot misconception.
-        throw new Error(`Cannot create broker when state is ${inside.state}`);
-      }
-      inside.broker = createBroker(newSettings);
-    },
-    emit,
-    log,
-  };
-};
-
-/**
- * @returns {{ start: ()=> Promise<void>, stop: ()=> Promise<void>,log: () => void }}
- * @param {*} param0
+ * @returns {brokerRevolver}
+  @param {{
+    settings:settings, settingsUpdateEvent:settingsUpdateEvent, schemaFactories: schemaFactory[]
+  }} brokerRevolverOptions
  */
 const newBrokerRevolver = ({
   settings,
   settingsUpdateEvent,
   schemaFactories,
 }) => {
+  /** @type {any} */
   const brokerRevolver = new EventEmitter();
   const emit = brokerRevolver.emit.bind(brokerRevolver);
 
   const brokerShell = newBrokerShell(settings, emit);
 
   brokerRevolver.start = starter({
-    emit,
     brokerShell,
     schemaFactories,
     settingsUpdateEvent,
   });
   brokerRevolver.stop = stopper(brokerShell);
-  brokerRevolver.log = (...args) => brokerShell.log(...args);
 
-  ['call', 'waitForServices'].forEach((method) => {
+  ['call', 'waitForServices', 'log'].forEach((method) => {
     brokerRevolver[method] = (...args) => brokerShell[method](...args);
   });
   return brokerRevolver;

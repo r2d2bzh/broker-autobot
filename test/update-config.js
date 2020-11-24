@@ -1,3 +1,4 @@
+// @ts-check
 const test = require('ava');
 const { ServiceBroker } = require('moleculer');
 const { v4: uuid } = require('uuid');
@@ -7,10 +8,10 @@ const { describeConfigFactory } = require('./helpers/utils');
 const retrieveConfig = async (t) => {
   t.context.configHolderService = new ServiceBroker({
     transporter: 'TCP',
-    nodeID: `${uuid()}-config-holder`,
+    nodeID: `${uuid()}-dynamic-config-holder`,
   });
   t.context.configHolderService.createService({
-    name: 'config-holder',
+    name: 'dynamic-config-holder',
     actions: {
       get: (context) => ({ count: context.meta.count || 0 }),
       update: {
@@ -19,7 +20,10 @@ const retrieveConfig = async (t) => {
         },
         handler: async (context) => {
           context.meta.count = context.params.count;
-          context.broker.broadcast('config-holder.configurationUpdated', { count: context.meta.count });
+          context.broker.broadcast(
+            'dynamic-config-holder.configurationUpdated',
+            { count: context.meta.count },
+          );
           return {
             acknowledge: true,
           };
@@ -32,22 +36,24 @@ const retrieveConfig = async (t) => {
 
 test.before(async (t) => {
   await retrieveConfig(t);
-  t.context.autobot = await brokerAutobot({
+  const autobot = await brokerAutobot({
     initialSettings: {
       foo: 'bar',
       transporter: 'TCP',
       nodeID: `${uuid()}-autobot`,
     },
-    retrieveAction: {
-      serviceName: 'config-holder',
+    settingsRetrieveAction: {
+      serviceName: 'dynamic-config-holder',
       actionName: 'get',
     },
-    updateEvent: {
-      name: 'config-holder.configurationUpdated',
+    settingsUpdateEvent: {
+      name: 'dynamic-config-holder.configurationUpdated',
     },
     schemaFactories: [describeConfigFactory],
   });
-  await t.context.autobot.start();
+  await autobot.start();
+  // @ts-ignore
+  t.context.autobot = autobot;
 });
 
 test.after.always(async (t) => {
@@ -61,7 +67,12 @@ test('Autobot should update on signal received', async (t) => {
 
   const p = new Promise((res) => t.context.autobot.on('config-update', res));
 
-  const { acknowledge } = await t.context.configHolderService.call('config-holder.update', { count: 1 });
+  const { acknowledge } = await t.context.configHolderService.call(
+    'dynamic-config-holder.update',
+    {
+      count: 1,
+    },
+  );
   t.is(acknowledge, true);
 
   await p;

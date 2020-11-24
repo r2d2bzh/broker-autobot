@@ -154,7 +154,7 @@ In order for the `broker-autobot` to be aware of a configuration update, you can
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  updateEvent: {
+  settingsUpdateEvent: {
     name: 'configuration-holder-service.configurationUpdated',
     predicate: (ctx) => {
       // returns true or false depending on the event handler context
