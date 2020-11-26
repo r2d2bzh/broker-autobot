@@ -2,7 +2,6 @@
 // @ts-check
 const { EventEmitter } = require('events');
 const newBrokerShell = require('./broker-shell');
-const { STARTING, STOPPING, STOPPED, STARTED } = require('./constants');
 
 /**
  * @param {settingsUpdateEvent} settingsUpdateEvent
@@ -18,7 +17,6 @@ const newUpdateServiceSchema = (
   events: {
     [name]: {
       handler: (ctx) => {
-        console.log('received update signal');
         if (predicate(ctx)) {
           brokerShell.log().info(`Event ${ctx.eventName} received`);
           // TODO debounce (limit to 1 event in 30s)
@@ -29,57 +27,24 @@ const newUpdateServiceSchema = (
   },
 });
 
-/**
-  @param {{
-    brokerShell:brokerShell,
-    schemaFactories: schemaFactory[],
-    settingsUpdateEvent: settingsUpdateEvent,
-    emit: () => void
-  }} staterOptions
- */
-const starter = ({
-  brokerShell,
-  emit,
-  schemaFactories,
+const addServices = ({
   settingsUpdateEvent,
-}) => /** @param {settings} settings */ async (settings) => {
-  if (brokerShell.getState() === STOPPED) {
-    brokerShell.newSettings(settings);
-    brokerShell.setState(STARTING);
-    if (settingsUpdateEvent.name) {
-      brokerShell
-        .log()
-        .info(`Subscribing to ${settingsUpdateEvent.name} event`);
-      brokerShell.createService(
-        newUpdateServiceSchema(settingsUpdateEvent, brokerShell, emit),
-      );
-    }
-    schemaFactories.forEach((schemaFactory) => {
-      const schema = schemaFactory();
-      brokerShell.log().info(`Creating service ${schema.name}`);
-      brokerShell.createService(schema);
-      return schema.name;
-    });
-    await brokerShell.start();
-    brokerShell.setState(STARTED);
-  } else {
-    brokerShell
-      .log()
-      .warn(`Cannot start, autobot is ${brokerShell.getState()}`);
+  brokerShell,
+  schemaFactories,
+  emit,
+}) => () => {
+  if (settingsUpdateEvent.name) {
+    brokerShell.log().info(`Subscribing to ${settingsUpdateEvent.name} event`);
+    brokerShell.createService(
+      newUpdateServiceSchema(settingsUpdateEvent, brokerShell, emit),
+    );
   }
-};
-
-/**
- * @param {brokerShell} brokerShell
- */
-const stopper = (brokerShell) => async () => {
-  if (brokerShell.getState() === STARTED) {
-    brokerShell.setState(STOPPING);
-    await brokerShell.stop();
-    brokerShell.setState(STOPPED);
-  } else {
-    brokerShell.log().warn(`Cannot stop, autobot is ${brokerShell.getState()}`);
-  }
+  schemaFactories.forEach((schemaFactory) => {
+    const schema = schemaFactory();
+    brokerShell.log().info(`Creating service ${schema.name}`);
+    brokerShell.createService(schema);
+    return schema.name;
+  });
 };
 
 /**
@@ -99,13 +64,15 @@ const newBrokerRevolver = ({
 
   const brokerShell = newBrokerShell(settings);
 
-  brokerRevolver.start = starter({
-    brokerShell,
-    emit,
-    schemaFactories,
-    settingsUpdateEvent,
-  });
-  brokerRevolver.stop = stopper(brokerShell);
+  brokerRevolver.start = brokerShell.start(
+    addServices({
+      settingsUpdateEvent,
+      emit,
+      brokerShell,
+      schemaFactories,
+    }),
+  );
+  brokerRevolver.stop = brokerShell.stop.bind(brokerRevolver);
   ['call', 'waitForServices', 'log', 'nodeID'].forEach((method) => {
     brokerRevolver[method] = (...args) => brokerShell[method](...args);
   });

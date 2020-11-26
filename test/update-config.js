@@ -20,13 +20,11 @@ const retrieveConfig = async (t) => {
           count: 'number',
         },
         handler: async (context) => {
-          console.log('sending event configuration update');
           context.meta.count = context.params.count;
           context.broker.broadcast(
             'dynamic-config-holder.configurationUpdated',
             { count: context.meta.count },
           );
-          console.log('event configuration update sent');
           return {
             acknowledge: true,
           };
