@@ -6,6 +6,19 @@ const { v4: uuid } = require('uuid');
 const brokerAutobot = require('../src');
 const { describeConfigFactory } = require('./helpers/utils');
 
+const updateConfig = async (t) => {
+  const p = new Promise((res) => t.context.autobot.on('config-update', res));
+  await t.context.configHolderServiceBroker.waitForServices(`autobot-updater-${t.context.autobot.nodeID()}`);
+  const { acknowledge } = await t.context.configHolderServiceBroker.call('dynamic-config-holder.update', {
+    count: 1,
+  });
+  t.is(acknowledge, true);
+  // wait before config update is done
+  await p;
+  // then wait untill autobot has reloaded his config
+  await sleep(1000);
+};
+
 const retrieveConfig = async (t) => {
   t.context.configHolderServiceBroker = new ServiceBroker({
     transporter: 'TCP',
@@ -21,10 +34,7 @@ const retrieveConfig = async (t) => {
         },
         handler: async (context) => {
           context.meta.count = context.params.count;
-          context.broker.broadcast(
-            'dynamic-config-holder.configurationUpdated',
-            { count: context.meta.count },
-          );
+          context.broker.broadcast('dynamic-config-holder.configurationUpdated', { count: context.meta.count });
           return {
             acknowledge: true,
           };
@@ -65,23 +75,7 @@ test('Autobot should update on signal received', async (t) => {
   t.plan(3);
   const { count } = await t.context.autobot.call('describe-config.get');
   t.is(count, 0);
-
-  const p = new Promise((res) => t.context.autobot.on('config-update', res));
-
-  await t.context.configHolderServiceBroker.waitForServices(
-    `autobot-updater-${t.context.autobot.nodeID()}`,
-  );
-  const { acknowledge } = await t.context.configHolderServiceBroker.call(
-    'dynamic-config-holder.update',
-    {
-      count: 1,
-    },
-  );
-  t.is(acknowledge, true);
-  // wait before config update is done
-  await p;
-  // then wait untill autobot has reloaded his config
-  await sleep(1000);
+  await updateConfig(t);
   const result = await t.context.autobot.call('describe-config.get');
   t.is(result.count, 1);
 });

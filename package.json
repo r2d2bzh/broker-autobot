@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test:debug": "ava debug --host 0.0.0.0 --port 8228",
-    "test": "nyc ava"
+    "test": "nyc ava",
+    "lint": "eslint ."
   },
   "nyc": {
     "cwd": ".",
@@ -42,12 +43,9 @@
     "uuid": "^8.3.1"
   },
   "devDependencies": {
+    "@r2d2bzh/eslint-config": "0.0.0",
+    "@r2d2bzh/js-rules": "0.0.0",
     "ava": "^3.13.0",
-    "eslint": "^7.13.0",
-    "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-plugin-import": "^2.22.1",
-    "moleculer-cron": "0.0.2",
-    "nyc": "^15.1.0",
-    "prettier": "^2.2.0"
+    "nyc": "^15.1.0"
   }
 }

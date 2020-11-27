@@ -19,8 +19,6 @@ test.after.always(async (t) => {
 });
 
 test('Autobot should start with a simple config', async (t) => {
-  const { nodeID, ...config } = await t.context.autobot.call(
-    'describe-config.get',
-  );
+  const { nodeID, ...config } = await t.context.autobot.call('describe-config.get');
   t.snapshot(config);
 });

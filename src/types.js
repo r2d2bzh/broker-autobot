@@ -7,8 +7,8 @@
  */
 
 /**
-* @typedef {'starting' | 'started' | 'stopping' | 'stopped'} state;
-*/
+ * @typedef {'starting' | 'started' | 'stopping' | 'stopped'} state;
+ */
 
 /**
   @typedef {{

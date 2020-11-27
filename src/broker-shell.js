@@ -7,8 +7,7 @@ const { STOPPED, STARTING, STARTED, STOPPING } = require('./constants');
 /**
  * @param {settings} param0
  */
-const createBroker = ({ initial, current, overload }) =>
-  new ServiceBroker(merge({}, initial, current, overload));
+const createBroker = ({ initial, current, overload }) => new ServiceBroker(merge({}, initial, current, overload));
 
 /**
  * Manage the broker state

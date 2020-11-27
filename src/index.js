@@ -12,17 +12,11 @@ const identity = (x) => x;
  */
 const retrieveSettings = async (
   brokerRevolver,
-  {
-    serviceName,
-    actionName,
-    params = {},
-    isStreamed = false,
-    parser = identity,
-  },
+  { serviceName, actionName, params = {}, isStreamed = false, parser = identity }
 ) => {
   if (serviceName && actionName) {
     const config = await (isStreamed ? getStream : identity)(
-      await brokerRevolver.call(`${serviceName}.${actionName}`, params),
+      await brokerRevolver.call(`${serviceName}.${actionName}`, params)
     );
     brokerRevolver.log().info('Settings retrieved:', config);
     return parser(config);
@@ -52,12 +46,10 @@ module.exports = async ({
   const settings = {
     initial: merge(
       {
-        ...(process.env.TRANSPORTER
-          ? { transporter: process.env.TRANSPORTER }
-          : {}),
+        ...(process.env.TRANSPORTER ? { transporter: process.env.TRANSPORTER } : {}),
         ...(process.env.NAMESPACE ? { namespace: process.env.NAMESPACE } : {}),
       },
-      initialSettings,
+      initialSettings
     ),
     /** @type {settings} */
     current: {},
@@ -73,13 +65,8 @@ module.exports = async ({
   const start = async (currentSettings) => {
     if (!currentSettings && settingsRetrieveAction.serviceName) {
       await brokerRevolver.start(settings);
-      await brokerRevolver.waitForServices([
-        settingsRetrieveAction.serviceName,
-      ]);
-      settings.current = await retrieveSettings(
-        brokerRevolver,
-        settingsRetrieveAction,
-      );
+      await brokerRevolver.waitForServices([settingsRetrieveAction.serviceName]);
+      settings.current = await retrieveSettings(brokerRevolver, settingsRetrieveAction);
       await brokerRevolver.stop();
     } else {
       settings.current = currentSettings;
@@ -89,10 +76,7 @@ module.exports = async ({
 
   const stop = () => brokerRevolver.stop();
 
-  brokerRevolver.on(
-    'config-update',
-    onConfigUpdate(stop, start, brokerRevolver.log),
-  );
+  brokerRevolver.on('config-update', onConfigUpdate(stop, start, brokerRevolver.log));
 
   // const exposedBrokerMethods = ['call', 'stop', 'waitForServices'];
   // ...Object.fromEntries(exposedBrokerMethods

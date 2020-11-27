@@ -8,11 +8,7 @@ const newBrokerShell = require('./broker-shell');
  * @param {brokerShell} brokerShell
  * @param {function} emit
  */
-const newUpdateServiceSchema = (
-  { name, predicate = () => true },
-  brokerShell,
-  emit,
-) => ({
+const newUpdateServiceSchema = ({ name, predicate = () => true }, brokerShell, emit) => ({
   name: `autobot-updater-${brokerShell.nodeID()}`,
   events: {
     [name]: {
@@ -27,17 +23,10 @@ const newUpdateServiceSchema = (
   },
 });
 
-const addServices = ({
-  settingsUpdateEvent,
-  brokerShell,
-  schemaFactories,
-  emit,
-}) => () => {
+const addServices = ({ settingsUpdateEvent, brokerShell, schemaFactories, emit }) => () => {
   if (settingsUpdateEvent.name) {
     brokerShell.log().info(`Subscribing to ${settingsUpdateEvent.name} event`);
-    brokerShell.createService(
-      newUpdateServiceSchema(settingsUpdateEvent, brokerShell, emit),
-    );
+    brokerShell.createService(newUpdateServiceSchema(settingsUpdateEvent, brokerShell, emit));
   }
   schemaFactories.forEach((schemaFactory) => {
     const schema = schemaFactory();
@@ -53,11 +42,7 @@ const addServices = ({
     settings:settings, settingsUpdateEvent:settingsUpdateEvent, schemaFactories: schemaFactory[]
   }} brokerRevolverOptions
  */
-const newBrokerRevolver = ({
-  settings,
-  settingsUpdateEvent,
-  schemaFactories,
-}) => {
+const newBrokerRevolver = ({ settings, settingsUpdateEvent, schemaFactories }) => {
   /** @type {any} */
   const brokerRevolver = new EventEmitter();
   const emit = brokerRevolver.emit.bind(brokerRevolver);
@@ -70,7 +55,7 @@ const newBrokerRevolver = ({
       emit,
       brokerShell,
       schemaFactories,
-    }),
+    })
   );
   brokerRevolver.stop = brokerShell.stop.bind(brokerRevolver);
   ['call', 'waitForServices', 'log', 'nodeID'].forEach((method) => {

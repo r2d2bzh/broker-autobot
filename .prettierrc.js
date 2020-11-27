@@ -1,4 +1,1 @@
-module.exports = {
-  "singleQuote": true,
-  "trailingComma": "all"
-};
+module.exports = require('@r2d2bzh/js-rules')('prettier');
