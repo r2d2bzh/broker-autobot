@@ -2,7 +2,8 @@
   "name": "broker-autobot",
   "version": "0.0.0",
   "description": "self-configuring robotic lifeform to manage centrally the configuration of all Moleculer brokers",
-  "main": "broker-autobot",
+  "main": "src",
+  "types": "./dist/typings.d.ts",
   "directories": {
     "test": "test"
   },
@@ -46,6 +47,7 @@
   "devDependencies": {
     "@r2d2bzh/eslint-config": "0.0.0",
     "@r2d2bzh/js-rules": "0.0.0",
+    "@types/node": "^14.14.10",
     "ava": "^3.13.0",
     "nyc": "^15.1.0"
   }
