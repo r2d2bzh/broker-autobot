@@ -47,7 +47,7 @@ const newBrokerRevolver = ({ settings, settingsUpdateEvent, schemaFactories }) =
   const brokerRevolver = new EventEmitter();
   const emit = brokerRevolver.emit.bind(brokerRevolver);
 
-  const brokerShell = newBrokerShell(settings);
+  const brokerShell = newBrokerShell(settings, emit);
 
   brokerRevolver.start = brokerShell.start(
     addServices({
@@ -57,9 +57,9 @@ const newBrokerRevolver = ({ settings, settingsUpdateEvent, schemaFactories }) =
       schemaFactories,
     })
   );
-  brokerRevolver.stop = brokerShell.stop.bind(brokerRevolver);
-  ['call', 'waitForServices', 'log', 'nodeID'].forEach((method) => {
-    brokerRevolver[method] = (...args) => brokerShell[method](...args);
+
+  ['call', 'waitForServices', 'log', 'nodeID', 'stop'].forEach((method) => {
+    brokerRevolver[method] = brokerShell[method];
   });
   return brokerRevolver;
 };

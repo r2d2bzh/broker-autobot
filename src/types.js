@@ -16,7 +16,6 @@
     log: () => import('moleculer').LoggerInstance
     start: (addServices: () => void) => () => Promise<void>
     stop: () => Promise<void>
-    newSettings: (newSettings: settings) => void
     createService: (schema) => void
     call: (schema) => Promise<any>
     waitForServices: (services: Array<string>) => Promise<void>

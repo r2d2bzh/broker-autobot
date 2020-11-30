@@ -8,6 +8,7 @@ const retrieveConfig = async () => {
   const serviceBroker = new ServiceBroker({
     transporter: 'TCP',
     nodeID: `${uuid()}-config-holder`,
+    logLevel: { '**': 'warn' },
   });
   serviceBroker.createService({
     name: 'config-holder',
@@ -25,6 +26,7 @@ test.before(async (t) => {
       foo: 'bar',
       transporter: 'TCP',
       nodeID: `${uuid()}-autobot`,
+      logLevel: { '**': 'warn' },
     },
     settingsRetrieveAction: {
       serviceName: 'config-holder',

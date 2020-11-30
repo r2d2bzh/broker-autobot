@@ -8,6 +8,7 @@ test.before(async (t) => {
     initialSettings: {
       foo: 'bar',
       nodeID: `${uuid()}-autobot`,
+      logLevel: { '**': 'warn' },
     },
     schemaFactories: [describeConfigFactory],
   });

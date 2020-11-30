@@ -46,8 +46,8 @@ module.exports = async ({
   const settings = {
     initial: merge(
       {
-        ...(process.env.TRANSPORTER ? { transporter: process.env.TRANSPORTER } : {}),
-        ...(process.env.NAMESPACE ? { namespace: process.env.NAMESPACE } : {}),
+        ...(process.env.BROKER_AUTOBOT_TRANSPORTER ? { transporter: process.env.BROKER_AUTOBOT_TRANSPORTER } : {}),
+        ...(process.env.BROKER_AUTOBOT_NAMESPACE ? { namespace: process.env.BROKER_AUTOBOT_NAMESPACE } : {}),
       },
       initialSettings
     ),
@@ -74,20 +74,15 @@ module.exports = async ({
     await brokerRevolver.start(settings);
   };
 
-  const stop = () => brokerRevolver.stop();
+  const exposedBrokerResolverMethods = Object.fromEntries(
+    ['call', 'stop', 'waitForServices', 'nodeID'].map((name) => [name, brokerRevolver[name]])
+  );
 
-  brokerRevolver.on('config-update', onConfigUpdate(stop, start, brokerRevolver.log));
-
-  // const exposedBrokerMethods = ['call', 'stop', 'waitForServices'];
-  // ...Object.fromEntries(exposedBrokerMethods
-  // .map(name => [name, context.broker[name].bind(context.broker)])),
+  brokerRevolver.on('config-update', onConfigUpdate(exposedBrokerResolverMethods.stop, start, brokerRevolver.log));
 
   return {
+    ...exposedBrokerResolverMethods,
     start,
-    stop,
-    call: (...args) => brokerRevolver.call(...args),
-    waitForServices: (...args) => brokerRevolver.waitForServices(...args),
     on: (...args) => brokerRevolver.on(...args),
-    nodeID: () => brokerRevolver.nodeID(),
   };
 };

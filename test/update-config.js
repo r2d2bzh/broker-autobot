@@ -1,28 +1,28 @@
 // @ts-check
 const test = require('ava');
-const sleep = require('util').promisify(setTimeout);
 const { ServiceBroker } = require('moleculer');
 const { v4: uuid } = require('uuid');
 const brokerAutobot = require('../src');
 const { describeConfigFactory } = require('./helpers/utils');
 
 const updateConfig = async (t) => {
-  const p = new Promise((res) => t.context.autobot.on('config-update', res));
+  const configIsUpdated = new Promise((res) => t.context.autobot.on('config-update', res));
   await t.context.configHolderServiceBroker.waitForServices(`autobot-updater-${t.context.autobot.nodeID()}`);
   const { acknowledge } = await t.context.configHolderServiceBroker.call('dynamic-config-holder.update', {
     count: 1,
   });
   t.is(acknowledge, true);
   // wait before config update is done
-  await p;
-  // then wait untill autobot has reloaded his config
-  await sleep(1000);
+  await configIsUpdated;
+  // then wait until autobot has reloaded his config
+  await new Promise((res) => t.context.autobot.on('started', res));
 };
 
 const retrieveConfig = async (t) => {
   t.context.configHolderServiceBroker = new ServiceBroker({
     transporter: 'TCP',
     nodeID: `${uuid()}-dynamic-config-holder`,
+    logLevel: { '**': 'warn' },
   });
   t.context.configHolderServiceBroker.createService({
     name: 'dynamic-config-holder',
@@ -52,6 +52,7 @@ test.before(async (t) => {
       foo: 'bar',
       transporter: 'TCP',
       nodeID: `${uuid()}-autobot`,
+      logLevel: { '**': 'warn' },
     },
     settingsRetrieveAction: {
       serviceName: 'dynamic-config-holder',
