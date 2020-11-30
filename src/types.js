@@ -24,6 +24,8 @@
 
 /** @typedef {{ name?: string; throttling?: number; predicate?: (param?: any) => boolean }} settingsUpdateEvent */
 
+/** @typedef {{ name: string; throttling?: number; predicate?: (param?: any) => boolean }} newSettingsUpdateEvent */
+
 /** @typedef { () => import('moleculer').ServiceSchema} schemaFactory */
 
 /**

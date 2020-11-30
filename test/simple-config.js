@@ -1,6 +1,6 @@
 const test = require('ava');
 const { v4: uuid } = require('uuid');
-const brokerAutobot = require('../src');
+const brokerAutobot = require('../src/broker-autobot');
 const middleware = require('./helpers/middleware');
 const { describeConfigFactory } = require('./helpers/utils');
 

@@ -5,7 +5,7 @@ const newBrokerShell = require('./broker-shell');
 const throttle = require('lodash.throttle');
 
 /**
- * @param {settingsUpdateEvent} settingsUpdateEvent
+ * @param {newSettingsUpdateEvent} settingsUpdateEvent
  * @param {() => import('moleculer').LoggerInstance} log
  * @param {Function} nodeID
  * @param {Function} emit
