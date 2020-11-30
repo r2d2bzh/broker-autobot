@@ -3,7 +3,7 @@
 const getStream = require('get-stream');
 const merge = require('lodash.merge');
 const newBrokerRevolver = require('./broker-revolver');
-
+const sleep = require('util').promisify(setTimeout);
 const identity = (x) => x;
 
 /**
@@ -26,8 +26,9 @@ const retrieveSettings = async (
 };
 
 // TODO: deal with restart priorities between multiple brokers
-const onConfigUpdate = (stop, start, log) => async (ctx) => {
+const onConfigUpdate = ({ stop, start, log, updateWindowSize }) => async (ctx) => {
   log().info(`Update event ${ctx.eventName} received`);
+  await sleep(Math.random() * updateWindowSize);
   await stop();
   await start(ctx.params);
   log().info('Settings are updated:', ctx.params);
@@ -77,8 +78,16 @@ module.exports = async ({
   const exposedBrokerResolverMethods = Object.fromEntries(
     ['call', 'stop', 'waitForServices', 'nodeID'].map((name) => [name, brokerRevolver[name]])
   );
-
-  brokerRevolver.on('config-update', onConfigUpdate(exposedBrokerResolverMethods.stop, start, brokerRevolver.log));
+  // settingsUpdateEvent
+  brokerRevolver.on(
+    'config-update',
+    onConfigUpdate({
+      stop: exposedBrokerResolverMethods.stop,
+      start,
+      updateWindowSize: (settingsUpdateEvent.throttling || 30e3) * 0.75,
+      log: brokerRevolver.log,
+    })
+  );
 
   return {
     ...exposedBrokerResolverMethods,

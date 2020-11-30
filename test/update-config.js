@@ -59,6 +59,7 @@ test.before(async (t) => {
       actionName: 'get',
     },
     settingsUpdateEvent: {
+      throttling: 1e3,
       name: 'dynamic-config-holder.configurationUpdated',
     },
     schemaFactories: [describeConfigFactory],

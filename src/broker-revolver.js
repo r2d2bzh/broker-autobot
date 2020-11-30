@@ -2,21 +2,24 @@
 // @ts-check
 const { EventEmitter } = require('events');
 const newBrokerShell = require('./broker-shell');
+const throttle = require('lodash.throttle');
 
 /**
  * @param {settingsUpdateEvent} settingsUpdateEvent
  * @param {brokerShell} brokerShell
  * @param {function} emit
  */
-const newUpdateServiceSchema = ({ name, predicate = () => true }, brokerShell, emit) => ({
+const newUpdateServiceSchema = ({ name, throttling = 30e3, predicate = () => true }, brokerShell, emit) => ({
   name: `autobot-updater-${brokerShell.nodeID()}`,
+  created() {
+    this.emitUpdate = throttle((ctx) => emit('config-update', ctx), throttling);
+  },
   events: {
     [name]: {
-      handler: (ctx) => {
+      handler(ctx) {
         if (predicate(ctx)) {
           brokerShell.log().info(`Event ${ctx.eventName} received`);
-          // TODO debounce (limit to 1 event in 30s)
-          emit('config-update', ctx);
+          this.emitUpdate(ctx);
         }
       },
     },
@@ -39,7 +42,7 @@ const addServices = ({ settingsUpdateEvent, brokerShell, schemaFactories, emit }
 /**
  * @returns {brokerRevolver}
   @param {{
-    settings:settings, settingsUpdateEvent:settingsUpdateEvent, schemaFactories: schemaFactory[]
+    settings: settings, settingsUpdateEvent: settingsUpdateEvent, schemaFactories: schemaFactory[]
   }} brokerRevolverOptions
  */
 const newBrokerRevolver = ({ settings, settingsUpdateEvent, schemaFactories }) => {

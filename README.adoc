@@ -143,10 +143,22 @@ const autobot = brokerAutobot({
 NOTE: {lodash-merge}[Lodash merge] is used to merge `settingsOverload` over the common broker settings.
 ====
 
-== Configuration update event
+== Broker configuration update event
 
-In order for the `broker-autobot` to be aware of a configuration update, you can subscribe it to a {moleculer-event}[Moleculer event]:
+In order for the `broker-autobot` to be aware of a broker configuration update, a {moleculer-event}[Moleculer event] can be used to trigger its restart.
 
+name:: The name of the moleculer update event name to listen for (mandatory).
+throttling:: Minimum time to wait until taking into account any new update event (optional, default: `() => true`).
+predicate:: Decides whether or not the update event will trigger a broker restart (optional, default: `30e3` milliseconds).
+
+[NOTE]
+====
+The throttling parameter is also used to create an update window size.
+This is to avoid all autobots to restart at the same time which would disrupt services resilience.
+
+Currently the update window size is set to `¾ * throttling` which means that any autobot must start before `¼ * throttling`.
+If an autobot takes longer to restart, a new throttled update event might not be taken into account.
+====
 
 .Handling configuration updates
 ====
@@ -156,6 +168,7 @@ In order for the `broker-autobot` to be aware of a configuration update, you can
 const autobot = brokerAutobot({
   settingsUpdateEvent: {
     name: 'configuration-holder-service.configurationUpdated',
+    throttling: 20e3, // 20s
     predicate: (ctx) => {
       // returns true or false depending on the event handler context
     },

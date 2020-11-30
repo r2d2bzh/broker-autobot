@@ -22,7 +22,7 @@
   }} brokerShell
  */
 
-/** @typedef {{ name?: string; predicate?: (param?: any) => boolean }} settingsUpdateEvent */
+/** @typedef {{ name?: string; throttling?: number; predicate?: (param?: any) => boolean }} settingsUpdateEvent */
 
 /** @typedef { () => import('moleculer').ServiceSchema} schemaFactory */
 
