@@ -44,14 +44,14 @@
     params?: any
     parser?: (param?: any) => any
     isStreamed?: boolean
-  }} settingsRetrieveAction
+  }} settingsRetrievalAction
  */
 
 /**
   @typedef {{
     initialSettings?: any
     settingsOverload?: any
-    settingsRetrieveAction?: settingsRetrieveAction
+    settingsRetrievalAction?: settingsRetrievalAction
     settingsUpdateEvent?: settingsUpdateEvent
     schemaFactories?: schemaFactory[]
   }} autobotOptions

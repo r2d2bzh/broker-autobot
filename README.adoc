@@ -107,7 +107,7 @@ To register an action to retrieve the common broker configuration:
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  settingsRetrieveAction: {
+  settingsRetrievalAction: {
     serviceName: 'configuration-holder-service',
     actionName: 'get-broker-config',
     params: {
@@ -132,7 +132,7 @@ If some specific settings need to be applied to this particular broker instance,
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  settingsRetrieveAction: {
+  settingsRetrievalAction: {
     // ...
   },
   settingsOverload: {

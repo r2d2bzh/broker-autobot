@@ -1,5 +1,5 @@
 {
-  "name": "broker-autobot",
+  "name": "@r2d2bzh/broker-autobot",
   "version": "0.0.0",
   "description": "self-configuring robotic lifeform to manage centrally the configuration of all Moleculer brokers",
   "main": "src",
@@ -8,17 +8,8 @@
     "test": "test"
   },
   "scripts": {
-    "test:debug": "ava debug --host 0.0.0.0 --port 8228",
     "test": "nyc ava",
     "lint": "eslint ."
-  },
-  "nyc": {
-    "cwd": ".",
-    "include": [
-      "src"
-    ],
-    "reporter": "lcov",
-    "report-dir": "coverage"
   },
   "repository": {
     "type": "git",
@@ -40,11 +31,10 @@
     "get-stream": "^6.0.0",
     "lodash.merge": "^4.6.2",
     "lodash.throttle": "^4.1.1",
-    "moleculer": "^0.14.11",
-    "nodemon": "^2.0.6",
-    "uuid": "^8.3.1"
+    "moleculer": "^0.14.11"
   },
   "devDependencies": {
+    "uuid": "^8.3.1",
     "@r2d2bzh/eslint-config": "0.0.0",
     "@r2d2bzh/js-rules": "0.0.0",
     "@types/node": "^14.14.10",

@@ -8,7 +8,7 @@ const identity = (x) => x;
 
 /**
  * @param {brokerRevolver} brokerRevolver
- * @param {settingsRetrieveAction} param1
+ * @param {settingsRetrievalAction} param1
  */
 const retrieveSettings = async (
   brokerRevolver,
@@ -40,7 +40,7 @@ const onConfigUpdate = ({ stop, start, log, updateWindowSize }) => async (ctx) =
 module.exports = async ({
   initialSettings = {},
   settingsOverload = {},
-  settingsRetrieveAction = {},
+  settingsRetrievalAction = {},
   settingsUpdateEvent = {},
   schemaFactories = [],
 } = {}) => {
@@ -64,10 +64,10 @@ module.exports = async ({
   });
 
   const start = async (currentSettings) => {
-    if (!currentSettings && settingsRetrieveAction.serviceName) {
+    if (!currentSettings && settingsRetrievalAction.serviceName) {
       await brokerRevolver.start(settings);
-      await brokerRevolver.waitForServices([settingsRetrieveAction.serviceName]);
-      settings.current = await retrieveSettings(brokerRevolver, settingsRetrieveAction);
+      await brokerRevolver.waitForServices([settingsRetrievalAction.serviceName]);
+      settings.current = await retrieveSettings(brokerRevolver, settingsRetrievalAction);
       await brokerRevolver.stop();
     } else {
       settings.current = currentSettings;

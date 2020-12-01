@@ -28,7 +28,7 @@ test.before(async (t) => {
       nodeID: `${uuid()}-autobot`,
       logLevel: { '**': 'warn' },
     },
-    settingsRetrieveAction: {
+    settingsRetrievalAction: {
       serviceName: 'config-holder',
       actionName: 'get',
     },
