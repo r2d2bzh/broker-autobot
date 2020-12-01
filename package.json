@@ -27,6 +27,9 @@
     "url": "https://github.com/r2d2bzh/broker-autobot/issues"
   },
   "homepage": "https://github.com/r2d2bzh/broker-autobot#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "get-stream": "^6.0.0",
     "lodash.merge": "^4.6.2",

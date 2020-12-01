@@ -1,0 +1,18 @@
+language: node_js
+sudo: false
+node_js:
+  - 12
+install:
+  - npm i
+script:
+  - npm test
+deploy:
+  provider: npm
+  email: gautaz@users.noreply.github.com
+  api_key:
+    secure: VTdqX9YmhpTCuSAs0QCEh+Yvzfdix8zyIjMe5b2FJrdE+ba4XwUUPFYHm03YEwHIOGj9U2QSNO4LfhCwYSAMSyTdzs+kpOksTiNQ5sO8rPY7edIO+pMH0pXVoWjyyRL9HnB7Kckg6JLFQriwuLuNSQQTtdQTQ0cO0uuFcnrSx8C+LFr2L2WCRWnpluD+vBpkT2OoR/qH59tWcrPbBEiQCgsx67DkCaBvmWSwCQVC7SQAmcoNVl66jOYYYtUutNGqHAlmOG1D7tw6oF4FAL4PrkJmJMu/kKo4pb9thv1n0Ncc2N+/kewEjzFX25ZVWSJBjo+WrcHc2FOp2E1byOYl+HDxjUi3yb0UXlPPG1afAoHp9gKRs23PW+ZOhXIDHqqPLj14BzTDmWfMQ/jTklAbTB63YEtdUUG8JCuWb/8wjW5/8WaEv+u++/Q0KjDbiWVTpXxcXsSe2Tr2RtPL9VG9sy2tLvrnnoA3VmHLh+Lm4By5ehU5HMrpJFbMlfVeIs/mDL2G3ANp6JO93kG1wt5XIrT+nINhR5IBz0c6M0rmGsqnXqrzYM0k01PBNMItMhsBoECCDchtoUa++zCfCkmHablHRzK2NtL0fw2bCBZMgovtgv4Je0rb/Yw9W4yHUxFgTne7BA2RvVYSbp2Tk5cziGqsLT9pIq7OBX/Qf2RjIy8=
+  on:
+    tags: true
+    repo: r2d2bzh/broker-autobot
+    branch: main
+  skip_cleanup: 'true'
