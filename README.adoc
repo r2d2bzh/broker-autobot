@@ -18,12 +18,12 @@ endif::[]
 :moleculer-event: {moleculer-doc}/events.html
 :moleculer-service: {moleculer-doc}/services.html
 
-# The broker autobot
+= The broker autobot
 
 The {wikipedia-autobot}[Autobots] are benevolent, sentient, **self-configuring** robotic lifeforms from the planet Cybertron.
 This particular autobot is designed to ease the configuration updates of {moleculer}[Moleculer] services {moleculer-broker}[brokers].
 
-## Typical use case
+== Typical use case
 
 You manage multiple {moleculer-service}[Moleculer services] and you want to easily update the configuration of the brokers hosting the service instances at once.
 For instance, you have common settings for timeouts or log levels for all these brokers.
@@ -59,7 +59,7 @@ Basically all settings related to the communication between brokers cannot be ch
 This due to the fact that these settings are needed by the temporary broker used to retrieve the common settings.
 ====
 
-## Usage
+== Usage
 
 Get the `broker-autobot` module:
 
@@ -85,7 +85,7 @@ const schema2Factory = () => {
 };
 
 const autobot = brokerAutobot({
-  init: {
+  initialSettings: {
     // initial broker settings, typically settings related to the communication between brokers
     transporter: process.env.TRANSPORTER
   },
@@ -97,7 +97,7 @@ autobot.start();
 NOTE: Here there is neither an action nor an event to manage the broker configuration, the broker will start with an empty configuration.
 ====
 
-## Retrieving the common broker configuration
+== Retrieving the common broker configuration
 
 To register an action to retrieve the common broker configuration:
 
@@ -107,8 +107,9 @@ To register an action to retrieve the common broker configuration:
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  retrieveAction: {
-    name: 'configuration-holder-service.get-broker-config',
+  settingsRetrievalAction: {
+    serviceName: 'configuration-holder-service',
+    actionName: 'get-broker-config',
     params: {
       // action parameters
     },
@@ -121,31 +122,43 @@ const autobot = brokerAutobot({
 NOTE: If no parser is provided, the `retrieveActionResult` is directly used as the broker configuration object.
 ====
 
-## Overloading the common configuration
+== Overloading the common configuration
 
 If some specific settings need to be applied to this particular broker instance, the common configuration can be overloaded:
 
-.Broker settings overload
+.Broker settings settingsOverload
 ====
 .index.js
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  retrieveAction: {
+  settingsRetrievalAction: {
     // ...
   },
-  overload: {
+  settingsOverload: {
     logLevel: { '**': 'warn' },
   },
 });
 ----
-NOTE: {lodash-merge}[Lodash merge] is used to merge `overload` over the common broker settings.
+NOTE: {lodash-merge}[Lodash merge] is used to merge `settingsOverload` over the common broker settings.
 ====
 
-## Configuration update event
+== Broker configuration update event
 
-In order for the `broker-autobot` to be aware of a configuration update, you can subscribe it to a {moleculer-event}[Moleculer event]:
+In order for the `broker-autobot` to be aware of a broker configuration update, a {moleculer-event}[Moleculer event] can be used to trigger its restart.
 
+name:: The name of the moleculer update event name to listen for (mandatory).
+throttling:: Minimum time to wait until taking into account any new update event (optional, default: `() => true`).
+predicate:: Decides whether or not the update event will trigger a broker restart (optional, default: `30e3` milliseconds).
+
+[NOTE]
+====
+The throttling parameter is also used to create an update window size.
+This is to avoid all autobots to restart at the same time which would disrupt services resilience.
+
+Currently the update window size is set to `¾ * throttling` which means that any autobot must start before `¼ * throttling`.
+If an autobot takes longer to restart, a new throttled update event might not be taken into account.
+====
 
 .Handling configuration updates
 ====
@@ -153,8 +166,9 @@ In order for the `broker-autobot` to be aware of a configuration update, you can
 [source,javascript]
 ----
 const autobot = brokerAutobot({
-  updateEvent: {
+  settingsUpdateEvent: {
     name: 'configuration-holder-service.configurationUpdated',
+    throttling: 20e3, // 20s
     predicate: (ctx) => {
       // returns true or false depending on the event handler context
     },
