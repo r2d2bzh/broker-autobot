@@ -47,7 +47,7 @@ const retrieveConfig = async (t) => {
 
 test.before(async (t) => {
   await retrieveConfig(t);
-  const autobot = await brokerAutobot({
+  const autobot = brokerAutobot({
     initialSettings: {
       foo: 'bar',
       transporter: 'TCP',

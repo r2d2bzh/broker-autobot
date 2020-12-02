@@ -4,7 +4,7 @@ const brokerAutobot = require('../src');
 const { describeConfigFactory } = require('./helpers/utils');
 
 test.before(async (t) => {
-  t.context.autobot = await brokerAutobot({
+  t.context.autobot = brokerAutobot({
     initialSettings: {
       foo: 'bar',
       nodeID: `${uuid()}-autobot`,

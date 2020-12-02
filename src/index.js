@@ -37,7 +37,7 @@ const onConfigUpdate = ({ stop, start, log, updateWindowSize }) => async (ctx) =
 /**
  * @param {autobotOptions} AutobotOptions
  */
-module.exports = async ({
+module.exports = ({
   initialSettings = {},
   settingsOverload = {},
   settingsRetrievalAction = {},
