@@ -58,7 +58,6 @@ module.exports = ({
   };
 
   const brokerRevolver = newBrokerRevolver({
-    settings,
     settingsUpdateEvent,
     schemaFactories,
   });

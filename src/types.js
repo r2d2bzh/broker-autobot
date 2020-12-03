@@ -14,7 +14,7 @@
   @typedef {{
     nodeID: () => string
     log: () => import('moleculer').LoggerInstance
-    start: (addServices: () => void) => () => Promise<void>
+    start: (addServices: (log, createService, nodeID) => void) => () => Promise<void>
     stop: () => Promise<void>
     createService: (schema) => void
     call: (schema) => Promise<any>

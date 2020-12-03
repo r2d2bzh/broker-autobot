@@ -3,6 +3,7 @@ const { ServiceBroker } = require('moleculer');
 const { v4: uuid } = require('uuid');
 const brokerAutobot = require('../src');
 const { describeConfigFactory } = require('./helpers/utils');
+const middleware = require('./helpers/middleware');
 
 const retrieveConfig = async () => {
   const serviceBroker = new ServiceBroker({
@@ -19,14 +20,15 @@ const retrieveConfig = async () => {
   await serviceBroker.start();
 };
 
-test.before(async (t) => {
+const before = async (middlewareInstance) => {
   await retrieveConfig();
-  t.context.autobot = brokerAutobot({
+  const autobot = brokerAutobot({
     initialSettings: {
       foo: 'bar',
       transporter: 'TCP',
       nodeID: `${uuid()}-autobot`,
       logLevel: { '**': 'warn' },
+      ...(middlewareInstance ? { middlewares: [middlewareInstance] } : {}),
     },
     settingsRetrievalAction: {
       serviceName: 'config-holder',
@@ -34,14 +36,21 @@ test.before(async (t) => {
     },
     schemaFactories: [describeConfigFactory],
   });
-  await t.context.autobot.start();
-});
-
-test.after.always(async (t) => {
-  await t.context.autobot.stop();
-});
+  await autobot.start();
+  return autobot;
+};
 
 test('Autobot should start with a dynamic config', async (t) => {
-  const { nodeID, ...config } = await t.context.autobot.call('describe-config.get');
+  const autobot = await before();
+  const { nodeID, ...config } = await autobot.call('describe-config.get');
   t.snapshot(config);
+  await autobot.stop();
+});
+
+test('Autobot should start with a dynamic config and middleware', async (t) => {
+  const autobot = await before(middleware(t));
+  const { nodeID, ...config } = await autobot.call('describe-config.get');
+  t.snapshot(config);
+  await autobot.stop();
+  t.is(t.context.middlewareState, 'recycled');
 });
