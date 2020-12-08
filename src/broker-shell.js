@@ -11,14 +11,12 @@ const createBroker = ({ initial, current, overload }) => new ServiceBroker(merge
 
 /**
  * Manage the broker state
- * @param {settings} settings
  * @param {(name:string) => void} emit
  * @returns {brokerShell}
  */
-const newBrokerShell = (settings, emit) => {
+const newBrokerShell = (emit) => {
   const inside = {
     state: STOPPED,
-    broker: createBroker(settings),
   };
   /** @param {state} newState */
   const setState = (newState) => {
@@ -26,13 +24,16 @@ const newBrokerShell = (settings, emit) => {
     emit(newState);
   };
   const log = () => inside.broker.getLogger('autobot');
+  const createService = (schema) => inside.broker.createService(schema);
+  const nodeID = () => inside.broker.nodeID;
+
   return {
-    nodeID: () => inside.broker.nodeID,
-    start: (addServices) => async () => {
+    nodeID,
+    start: (addServices) => async (settings) => {
       if (inside.state === STOPPED) {
         setState(STARTING);
         inside.broker = createBroker(settings);
-        addServices();
+        addServices(log, createService, nodeID);
         await inside.broker.start();
         setState(STARTED);
       } else {
@@ -50,7 +51,7 @@ const newBrokerShell = (settings, emit) => {
     },
     call: (...args) => inside.broker.call(...args),
     waitForServices: (...args) => inside.broker.waitForServices(...args),
-    createService: (schema) => inside.broker.createService(schema),
+    createService,
     log,
   };
 };

@@ -37,7 +37,7 @@ const onConfigUpdate = ({ stop, start, log, updateWindowSize }) => async (ctx) =
 /**
  * @param {autobotOptions} AutobotOptions
  */
-module.exports = async ({
+module.exports = ({
   initialSettings = {},
   settingsOverload = {},
   settingsRetrievalAction = {},
@@ -58,7 +58,6 @@ module.exports = async ({
   };
 
   const brokerRevolver = newBrokerRevolver({
-    settings,
     settingsUpdateEvent,
     schemaFactories,
   });

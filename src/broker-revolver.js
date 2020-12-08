@@ -6,11 +6,12 @@ const throttle = require('lodash.throttle');
 
 /**
  * @param {settingsUpdateEvent} settingsUpdateEvent
- * @param {brokerShell} brokerShell
- * @param {function} emit
+ * @param {() => import('moleculer').LoggerInstance} log
+ * @param {Function} nodeID
+ * @param {Function} emit
  */
-const newUpdateServiceSchema = ({ name, throttling = 30e3, predicate = () => true }, brokerShell, emit) => ({
-  name: `autobot-updater-${brokerShell.nodeID()}`,
+const newUpdateServiceSchema = ({ name, throttling = 30e3, predicate = () => true }, log, nodeID, emit) => ({
+  name: `autobot-updater-${nodeID()}`,
   created() {
     this.emitUpdate = throttle((ctx) => emit('config-update', ctx), throttling);
   },
@@ -18,7 +19,7 @@ const newUpdateServiceSchema = ({ name, throttling = 30e3, predicate = () => tru
     [name]: {
       handler(ctx) {
         if (predicate(ctx)) {
-          brokerShell.log().info(`Event ${ctx.eventName} received`);
+          log().info(`Event ${ctx.eventName} received`);
           this.emitUpdate(ctx);
         }
       },
@@ -26,15 +27,15 @@ const newUpdateServiceSchema = ({ name, throttling = 30e3, predicate = () => tru
   },
 });
 
-const addServices = ({ settingsUpdateEvent, brokerShell, schemaFactories, emit }) => () => {
+const addServices = ({ settingsUpdateEvent, schemaFactories, emit }) => (log, createService, nodeID) => {
   if (settingsUpdateEvent.name) {
-    brokerShell.log().info(`Subscribing to ${settingsUpdateEvent.name} event`);
-    brokerShell.createService(newUpdateServiceSchema(settingsUpdateEvent, brokerShell, emit));
+    log().info(`Subscribing to ${settingsUpdateEvent.name} event`);
+    createService(newUpdateServiceSchema(settingsUpdateEvent, log, nodeID, emit));
   }
   schemaFactories.forEach((schemaFactory) => {
     const schema = schemaFactory();
-    brokerShell.log().info(`Creating service ${schema.name}`);
-    brokerShell.createService(schema);
+    log().info(`Creating service ${schema.name}`);
+    createService(schema);
     return schema.name;
   });
 };
@@ -42,21 +43,20 @@ const addServices = ({ settingsUpdateEvent, brokerShell, schemaFactories, emit }
 /**
  * @returns {brokerRevolver}
   @param {{
-    settings: settings, settingsUpdateEvent: settingsUpdateEvent, schemaFactories: schemaFactory[]
+    settingsUpdateEvent: settingsUpdateEvent, schemaFactories: schemaFactory[]
   }} brokerRevolverOptions
  */
-const newBrokerRevolver = ({ settings, settingsUpdateEvent, schemaFactories }) => {
+const newBrokerRevolver = ({ settingsUpdateEvent, schemaFactories }) => {
   /** @type {any} */
   const brokerRevolver = new EventEmitter();
   const emit = brokerRevolver.emit.bind(brokerRevolver);
 
-  const brokerShell = newBrokerShell(settings, emit);
+  const brokerShell = newBrokerShell(emit);
 
   brokerRevolver.start = brokerShell.start(
     addServices({
       settingsUpdateEvent,
       emit,
-      brokerShell,
       schemaFactories,
     })
   );
