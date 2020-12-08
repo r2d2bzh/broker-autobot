@@ -1,13 +1,11 @@
 {
+  "extends": "@tsconfig/node12/tsconfig.json",
   "compilerOptions": {
-    "module": "ES2020",
-    "moduleResolution": "Node",
-    "lib": ["ES2020"],
     "allowJs": true,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "checkJs": true,
-    "outFile": "dist/typings.d.ts"
+    "outFile": "@types/index.d.ts",
+    "noImplicitAny": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]

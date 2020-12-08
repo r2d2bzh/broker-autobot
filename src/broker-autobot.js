@@ -36,6 +36,14 @@ const onConfigUpdate = ({ stop, start, log, updateWindowSize }) => async (ctx) =
 
 /**
  * @param {autobotOptions} AutobotOptions
+ * @returns {Promise<{
+ *  call: () => Promise<any>,
+ *  on: Function,
+ *  start: (options: { initial?: any, current?: any, overload?: any }) => Promise<any>,
+ *  stop: () => Promise<void>,
+ *  waitForServices: (services: schemaFactory[]) => Promise<void>,
+ *  nodeID: () => string}>
+ * }
  */
 module.exports = ({
   initialSettings = {},
@@ -62,6 +70,9 @@ module.exports = ({
     schemaFactories,
   });
 
+  /**
+   * @param {{ initial?: any; current?: any; overload?: any; }} currentSettings
+   */
   const start = async (currentSettings) => {
     if (!currentSettings && settingsRetrievalAction.serviceName) {
       await brokerRevolver.start(settings);
@@ -88,9 +99,11 @@ module.exports = ({
     })
   );
 
+  // @ts-ignore
   return {
     ...exposedBrokerResolverMethods,
     start,
+    // @ts-ignore
     on: (...args) => brokerRevolver.on(...args),
   };
 };
