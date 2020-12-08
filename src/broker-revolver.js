@@ -8,7 +8,7 @@ const throttle = require('lodash.throttle');
  * @param {settingsUpdateEvent} settingsUpdateEvent
  * @param {() => import('moleculer').LoggerInstance} log
  * @param {Function} nodeID
- * @param {function} emit
+ * @param {Function} emit
  */
 const newUpdateServiceSchema = ({ name, throttling = 30e3, predicate = () => true }, log, nodeID, emit) => ({
   name: `autobot-updater-${nodeID()}`,
