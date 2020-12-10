@@ -74,14 +74,14 @@ module.exports = ({
     await brokerRevolver.start(settings);
   };
 
-  const exposedBrokerResolverMethods = Object.fromEntries(
+  const exposedBrokerRevolverMethods = Object.fromEntries(
     ['call', 'stop', 'waitForServices', 'nodeID'].map((name) => [name, brokerRevolver[name]])
   );
   // settingsUpdateEvent
   brokerRevolver.on(
     'config-update',
     onConfigUpdate({
-      stop: exposedBrokerResolverMethods.stop,
+      stop: exposedBrokerRevolverMethods.stop,
       start,
       updateWindowSize: (settingsUpdateEvent.throttling || 30e3) * 0.75,
       log: brokerRevolver.log,
@@ -89,7 +89,7 @@ module.exports = ({
   );
 
   return {
-    ...exposedBrokerResolverMethods,
+    ...exposedBrokerRevolverMethods,
     start,
     on: (...args) => brokerRevolver.on(...args),
   };
