@@ -1,6 +1,6 @@
 {
   "name": "@r2d2bzh/broker-autobot",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "self-configuring robotic lifeform to manage centrally the configuration of all Moleculer brokers",
   "main": "src",
   "types": "./dist/typings.d.ts",
