@@ -23,7 +23,8 @@ const newBrokerShell = (emit) => {
     inside.state = newState;
     emit(newState);
   };
-  const log = () => inside.broker.getLogger('autobot');
+  const getLogger = (...args) => inside.broker.getLogger(...args);
+  const log = () => getLogger('autobot');
   const createService = (schema) => inside.broker.createService(schema);
   const nodeID = () => inside.broker.nodeID;
 
@@ -52,6 +53,7 @@ const newBrokerShell = (emit) => {
     call: (...args) => inside.broker.call(...args),
     waitForServices: (...args) => inside.broker.waitForServices(...args),
     createService,
+    getLogger,
     log,
   };
 };

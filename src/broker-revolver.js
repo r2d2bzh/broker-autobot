@@ -61,7 +61,7 @@ const newBrokerRevolver = ({ settingsUpdateEvent, schemaFactories }) => {
     })
   );
 
-  ['call', 'waitForServices', 'log', 'nodeID', 'stop'].forEach((method) => {
+  ['call', 'waitForServices', 'log', 'nodeID', 'stop', 'getLogger'].forEach((method) => {
     brokerRevolver[method] = brokerShell[method];
   });
   return brokerRevolver;

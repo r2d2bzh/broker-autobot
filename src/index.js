@@ -75,7 +75,7 @@ module.exports = ({
   };
 
   const exposedBrokerRevolverMethods = Object.fromEntries(
-    ['call', 'stop', 'waitForServices', 'nodeID'].map((name) => [name, brokerRevolver[name]])
+    ['call', 'stop', 'waitForServices', 'nodeID', 'getLogger'].map((name) => [name, brokerRevolver[name]])
   );
   // settingsUpdateEvent
   brokerRevolver.on(
