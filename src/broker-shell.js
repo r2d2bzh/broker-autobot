@@ -17,6 +17,7 @@ const createBroker = ({ initial, current, overload }) => new ServiceBroker(merge
 const newBrokerShell = (emit) => {
   const inside = {
     state: STOPPED,
+    broker: new ServiceBroker(),
   };
   /** @param {state} newState */
   const setState = (newState) => {
