@@ -42,9 +42,9 @@ const addServices = ({ settingsUpdateEvent, schemaFactories, emit }) => (log, cr
 
 /**
  * @returns {brokerRevolver}
-  @param {{
-    settingsUpdateEvent: settingsUpdateEvent, schemaFactories: schemaFactory[]
-  }} brokerRevolverOptions
+ * @param {{
+ *   settingsUpdateEvent: settingsUpdateEvent, schemaFactories: schemaFactory[]
+ * }} brokerRevolverOptions
  */
 const newBrokerRevolver = ({ settingsUpdateEvent, schemaFactories }) => {
   /** @type {any} */
